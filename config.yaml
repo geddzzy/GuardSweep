@@ -1,0 +1,35 @@
+monitor_dir: C:/Users/Admin/Documents
+ignored_paths:
+  - C:/Windows/Temp
+  - C:/Windows/Logs
+  - C:/Windows/System32/LogFiles
+  - C:/ProgramData/Microsoft/Windows/WER
+  - \AppData\Local\Temp
+  - \AppData\Local\Microsoft\Windows\INetCache
+  - \AppData\Local\Microsoft\Windows\WebCache
+  - \AppData\Local\Packages
+  - \AppData\Roaming\Mozilla\Firefox\Profiles
+  - \AppData\Local\Google\Chrome\User Data\Default\Cache
+  - \AppData\Local\Microsoft\Edge\User Data\Default\Cache
+  - \AppData\Roaming\Code\User\workspaceStorage
+  - \AppData\Roaming\Code\Cache
+  - \AppData\Roaming\Microsoft\Windows\Recent
+  - \AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations
+  - \AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations
+  - \ProgramData\Microsoft\Windows Defender\Support
+  - \ProgramData\Microsoft\Windows\WER
+  - \AppData\Local\Microsoft\Office\UnsavedFiles
+  - \AppData\Local\CrashDumps
+  - \AppData\Local\Temp
+suspicious_extensions:
+  - .exe
+  - .dll
+  - .bat
+  - .ps1
+  - .js
+  - .vbs
+  - .scr
+blacklisted_ips:
+  - 1.2.3.4
+  - 8.8.8.8
+log_file: guardsweep.log

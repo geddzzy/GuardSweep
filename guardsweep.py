@@ -1,39 +1,22 @@
+from jsonargparse import ArgumentParser, ActionConfigFile
 import psutil
 import time
 import os
 import sys
 import logging
-import argparse
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import threading
 from datetime import datetime
 
-# --- Configuration ---
-BLACKLISTED_IPS = {"1.2.3.4", "8.8.8.8"}  # Example IPs to flag
-MONITOR_DIR = os.path.expanduser("~")  # Directory to watch for new files
-LOG_FILE = "guardsweep.log"
 
-# Ignore Paths
-IGNORED_PATHS = [
-    r"AppData\Roaming\Mozilla\Firefox",
-    r"AppData\Local\Temp",
-    r"AppData\Roaming\Microsoft\Windows\Recent",
-    r"AppData\Local\Mozilla\Firefox",
-    r"AppData\Roaming\Code\User\globalStorage",
-    # Add more as needed
-]
-
-# Suspicious file extensions to alert on
-SUSPICIOUS_EXTENSIONS = {".exe", ".dll", ".bat", ".ps1", ".js", ".vbs", ".scr"}
-
-# --- Setup logging ---
-logging.basicConfig(
-    filename=LOG_FILE,
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+def setup_logging(log_file):
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
 
 def alert(message, severity="ALERT"):
@@ -48,31 +31,50 @@ def alert(message, severity="ALERT"):
         logging.info(formatted_msg)
 
 
-# --- File Monitoring Handler ---
+# -------------------------
 class FileMonitor(FileSystemEventHandler):
+    """
+    Custom watchdog event handler to monitor file creation events,
+    ignoring noisy paths and filtering by suspicious file extensions.
+    """
+
+    def __init__(self, ignored_paths, suspicious_extensions):
+        self.ignored_paths = ignored_paths
+        self.suspicious_extensions = suspicious_extensions
+
     def on_created(self, event):
+        # Ignore directory creations
         if event.is_directory:
             return
-        # Ignore files in ignored paths
-        if any(ignored in event.src_path for ignored in IGNORED_PATHS):
+        path_lower = event.src_path.lower()
+        # Skip files in ignored paths
+        if any(ignored.lower() in path_lower for ignored in self.ignored_paths):
             return
-        # Check if file extension is suspicious
+        # Check if file extension matches suspicious list
         _, ext = os.path.splitext(event.src_path)
-        if ext.lower() not in SUSPICIOUS_EXTENSIONS:
+        if ext.lower() not in self.suspicious_extensions:
             return
         alert(f"Suspicious file created: {event.src_path}")
 
 
-def start_file_monitor():
-    event_handler = FileMonitor()
+# -------------------------
+def start_file_monitor(monitor_dir, ignored_paths, suspicious_extensions):
+    """
+    Start watchdog observer to monitor file system events recursively.
+    """
+    event_handler = FileMonitor(ignored_paths, suspicious_extensions)
     observer = Observer()
-    observer.schedule(event_handler, path=MONITOR_DIR, recursive=True)
+    observer.schedule(event_handler, path=monitor_dir, recursive=True)
     observer.start()
     return observer
 
 
-# --- Process Monitoring Function ---
+# -------------------------
 def monitor_processes():
+    """
+    Monitor for new processes starting on the system.
+    Alerts when a new process PID is detected.
+    """
     known_pids = set(psutil.pids())
     while True:
         current_pids = set(psutil.pids())
@@ -84,54 +86,91 @@ def monitor_processes():
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
         known_pids = current_pids
-        time.sleep(3)  # Poll every 3 seconds to reduce CPU usage
+        time.sleep(3)
 
 
-# --- Network Monitoring Function ---
-def monitor_network():
+# -------------------------
+def monitor_network(blacklisted_ips):
+    """
+    Monitor network connections and alert on connections to blacklisted IPs.
+    """
     while True:
         for conn in psutil.net_connections(kind="inet"):
-            if conn.raddr and conn.raddr.ip in BLACKLISTED_IPS:
+            if conn.raddr and conn.raddr.ip in blacklisted_ips:
                 alert(f"Connection to blacklisted IP: {conn.raddr.ip}")
-        time.sleep(10)  # Check every 10 seconds
+        time.sleep(10)
 
 
+# -------------------------
 def main():
-    parser = argparse.ArgumentParser(description="GuardSweep - Cross-platform EDR tool")
+    parser = ArgumentParser(
+        description="GuardSweep - Cross-platform EDR tool",
+        default_config_files=["config.yaml"],
+    )
+    # Enable default config file loading (default to config.yaml)
     parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose output"
+        "--config",
+        action=ActionConfigFile,
+        help="Path to config YAML/JSON file",
+    )
+    # Arguments with minimal or empty defaults; config file fills these
+    parser.add_argument(
+        "--blacklisted_ips",
+        nargs="*",
+        default=None,
+        help="Blacklisted IP addresses (overrides config file)",
     )
     parser.add_argument(
-        "-d",
-        "--directory",
-        default=os.path.expanduser("~"),
-        help="Directory to monitor for file changes (default: user home)",
+        "--monitor_dir",
+        default=None,
+        help="Directory to monitor for file changes (overrides config file)",
     )
-    parser.add_argument("--version", action="version", version="GuardSweep 1.0")
+    parser.add_argument(
+        "--ignored_paths",
+        nargs="*",
+        default=None,
+        help="Paths to ignore for file monitoring (overrides config file)",
+    )
+    parser.add_argument(
+        "--suspicious_extensions",
+        nargs="*",
+        default=None,
+        help="File extensions to alert on (overrides config file)",
+    )
+    parser.add_argument(
+        "--log_file", default=None, help="Log file path (overrides config file)"
+    )
 
     args = parser.parse_args()
 
-    # Use args.verbose to control logging verbosity
-    if args.verbose:
-        alert("Verbose mode enabled", severity="INFO")
+    # Fallback defaults if neither CLI nor config provides values
+    blacklisted_ips = args.blacklisted_ips or ["1.2.3.4", "8.8.8.8"]
+    monitor_dir = args.monitor_dir or os.path.expanduser("~")
+    ignored_paths = args.ignored_paths or []
+    suspicious_extensions = args.suspicious_extensions or [
+        ".exe",
+        ".dll",
+        ".bat",
+        ".ps1",
+        ".js",
+        ".vbs",
+        ".scr",
+    ]
+    log_file = args.log_file or "guardsweep.log"
 
-    global MONITOR_DIR
-    MONITOR_DIR = args.directory
+    setup_logging(log_file)
+    alert(f"GuardSweep started. Monitoring directory: {monitor_dir}", severity="INFO")
 
-    alert(f"GuardSweep started. Monitoring directory: {MONITOR_DIR}", severity="INFO")
-
-    # Start your monitoring threads as before
-    observer = start_file_monitor()
-    file_thread = threading.Thread(target=observer.join)
-    file_thread.daemon = True
+    observer = start_file_monitor(monitor_dir, ignored_paths, suspicious_extensions)
+    file_thread = threading.Thread(target=observer.join, daemon=True)
     file_thread.start()
 
-    proc_thread = threading.Thread(target=monitor_processes)
-    proc_thread.daemon = True
+    proc_thread = threading.Thread(target=monitor_processes, daemon=True)
     proc_thread.start()
 
-    net_thread = threading.Thread(target=monitor_network)
-    net_thread.daemon = True
+    net_thread = threading.Thread(
+        target=monitor_network, args=(blacklisted_ips,), daemon=True
+    )
     net_thread.start()
 
     try:
@@ -142,6 +181,6 @@ def main():
         alert("GuardSweep stopped.", severity="INFO")
         sys.exit(0)
 
-# --- Main Program ---
+
 if __name__ == "__main__":
     main()
