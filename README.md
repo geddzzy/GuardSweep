@@ -35,6 +35,16 @@ python guardsweep.py
 
 GuardSweep will continuously monitor and print alerts to the console.
 
+## Configuration
+GuardSweep provides configurable options directly in the guardsweep.py script to tailor monitoring to your environment:
+
+- MONITOR_DIR: The root directory to watch for file creation events. Defaults to the user’s home directory.
+- IGNORED_PATHS: List of path substrings to exclude from file monitoring. Useful to filter out noisy system or application folders (e.g., browser caches, temp folders).
+- BLACKLISTED_IPS: Set of IP addresses to flag if network connections are detected.
+- SUSPICIOUS_EXTENSIONS: File extensions that trigger alerts when new files are created (e.g., .exe, .dll, .bat).
+
+To customize, open guardsweep.py and edit these variables near the top of the file before running.
+
 ## Project Structure
 ```
 guardsweep/
