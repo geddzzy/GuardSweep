@@ -16,7 +16,7 @@ GuardSweep is a lightweight, Python-based EDR (Endpoint Detection and Response) 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/guardsweep.git
+git clone https://github.com/geddzzy/guardsweep.git
 cd guardsweep
 ```
 
