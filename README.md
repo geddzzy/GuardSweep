@@ -76,7 +76,7 @@ guardsweep/
 
 ## About
 
-Created by a security engineer to explore real-time endpoint security monitoring using Python.
+Created by a security engineer dedicated to building a real-time, cross-platform endpoint detection and response (EDR) tool using Python.
 Feel free to use, contribute, or fork to build your own EDR solutions.
 
 
