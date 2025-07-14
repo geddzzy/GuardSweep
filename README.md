@@ -33,6 +33,12 @@ Run the main script to start monitoring:
 python guardsweep.py
 ```
 
+You can optionally specify a directory to monitor using the -d or --directory option:
+
+```bash
+python guardsweep.py --directory "C:\Path\To\Monitor"
+```
+
 GuardSweep will continuously monitor and print alerts to the console.
 
 ## Configuration
