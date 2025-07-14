@@ -9,7 +9,7 @@ from watchdog.events import FileSystemEventHandler
 import threading
 from datetime import datetime
 
-
+# Set up logging to a file with timestamp and severity formatting
 def setup_logging(log_file):
     logging.basicConfig(
         filename=log_file,
@@ -19,6 +19,7 @@ def setup_logging(log_file):
     )
 
 
+# Custom alert function that prints and logs messages with severity
 def alert(message, severity="ALERT"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     formatted_msg = f"[{timestamp}] [{severity}] {message}"
@@ -103,17 +104,18 @@ def monitor_network(blacklisted_ips):
 
 # -------------------------
 def main():
+    # Set up logging to a file with timestamp and severity formatting
     parser = ArgumentParser(
         description="GuardSweep - Cross-platform EDR tool",
         default_config_files=["config.yaml"],
     )
-    # Enable default config file loading (default to config.yaml)
+    # Allow specifying config file (YAML/JSON) from CLI
     parser.add_argument(
         "--config",
         action=ActionConfigFile,
         help="Path to config YAML/JSON file",
     )
-    # Arguments with minimal or empty defaults; config file fills these
+    # Define command-line arguments that override config file values
     parser.add_argument(
         "--blacklisted_ips",
         nargs="*",
@@ -141,9 +143,10 @@ def main():
         "--log_file", default=None, help="Log file path (overrides config file)"
     )
 
+    # Parse args from CLI or config file
     args = parser.parse_args()
 
-    # Fallback defaults if neither CLI nor config provides values
+    # Fallback default values if not provided by user
     blacklisted_ips = args.blacklisted_ips or ["1.2.3.4", "8.8.8.8"]
     monitor_dir = args.monitor_dir or os.path.expanduser("~")
     ignored_paths = args.ignored_paths or []
@@ -158,21 +161,26 @@ def main():
     ]
     log_file = args.log_file or "guardsweep.log"
 
+    # Initialize logging and notify user
     setup_logging(log_file)
     alert(f"GuardSweep started. Monitoring directory: {monitor_dir}", severity="INFO")
 
+    # Start file monitoring in a separate thread
     observer = start_file_monitor(monitor_dir, ignored_paths, suspicious_extensions)
     file_thread = threading.Thread(target=observer.join, daemon=True)
     file_thread.start()
 
+    # Start process monitoring in a separate thread
     proc_thread = threading.Thread(target=monitor_processes, daemon=True)
     proc_thread.start()
 
+    # Start network monitoring in a separate thread
     net_thread = threading.Thread(
         target=monitor_network, args=(blacklisted_ips,), daemon=True
     )
     net_thread.start()
 
+    # Keep main thread alive; clean exit on Ctrl+C
     try:
         while True:
             time.sleep(1)
@@ -181,6 +189,6 @@ def main():
         alert("GuardSweep stopped.", severity="INFO")
         sys.exit(0)
 
-
+# Entry point to run the GuardSweep EDR
 if __name__ == "__main__":
     main()
