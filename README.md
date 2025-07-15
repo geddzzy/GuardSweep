@@ -44,6 +44,8 @@ python guardsweep.py \
   --blacklisted_ips 8.8.8.8 1.2.3.4
 ```
 
+---
+
 You can enable automated response to suspicious process creations by using:
 
 ```bash
@@ -53,6 +55,18 @@ python guardsweep.py --auto_respond --suspicious_process_names notepad.exe cmd.e
 This will automatically terminate any process whose name matches one in the list.
 
 The behavioral analytics feature alerts if a high rate of process creation is detected.
+
+---
+
+You can enable YARA-based file scanning and automatic quarantine of suspicious files with:
+
+```bash
+python guardsweep.py --enable_quarantine
+```
+
+Place your YARA rules files (e.g., `upx_packed.yar`) in the `yara_rules` directory. GuardSweep will scan new files with these rules and quarantine matches.
+
+---
 
 GuardSweep will continuously monitor and print alerts to the console.
 
@@ -67,6 +81,8 @@ GuardSweep provides configurable options directly in the guardsweep.py script to
 - log_file: Path to write logs.
 - auto_respond: Boolean flag to enable automatic termination of suspicious processes.
 - suspicious_process_names: List of process executable names that trigger automatic termination (case-insensitive).
+- enable_quarantine: Enable file quarantine when YARA rules match.
+- yara_rules_dir: Directory containing YARA rules files to load (default: `./yara_rules`).
 
 To customize, edit config.yaml or pass arguments via CLI.
 
@@ -74,15 +90,17 @@ To customize, edit config.yaml or pass arguments via CLI.
 
 ```
 guardsweep/
-├── guardsweep.py         # Main logic
-├── config.yaml           # Config file
-├── requirements.txt      # Dependencies
+├── guardsweep.py           # Main logic
+├── yara_rules/             # Directory containing YARA rules
+│   └── upx_packed.yar      # Example YARA rule detecting UPX-packed executables
+├── config.yaml             # Config file
+├── requirements.txt        # Dependencies
 ├── LICENSE
 └── README.md
 ```
 
 - guardsweep.py – Main monitoring script
-- requirements.txt – Python dependencies (psutil, watchdog)
+- requirements.txt – Python dependencies
 - LICENSE – License file
 - README.md – This file!
 - .gitignore – Files and folders to exclude from git
