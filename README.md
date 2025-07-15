@@ -44,6 +44,16 @@ python guardsweep.py \
   --blacklisted_ips 8.8.8.8 1.2.3.4
 ```
 
+You can enable automated response to suspicious process creations by using:
+
+```bash
+python guardsweep.py --auto_respond --suspicious_process_names notepad.exe cmd.exe
+```
+
+This will automatically terminate any process whose name matches one in the list.
+
+The behavioral analytics feature alerts if a high rate of process creation is detected.
+
 GuardSweep will continuously monitor and print alerts to the console.
 
 ## Configuration
@@ -55,6 +65,8 @@ GuardSweep provides configurable options directly in the guardsweep.py script to
 - blacklisted_ips: List of IPs to flag if network connections are made to them.
 - suspicious_extensions: File extensions that trigger alerts when new files are created (e.g., .exe, .dll, .bat).
 - log_file: Path to write logs.
+- auto_respond: Boolean flag to enable automatic termination of suspicious processes.
+- suspicious_process_names: List of process executable names that trigger automatic termination (case-insensitive).
 
 To customize, edit config.yaml or pass arguments via CLI.
 
@@ -91,6 +103,10 @@ blacklisted_ips:
   - 1.2.3.4
   - 8.8.8.8
 log_file: guardsweep.log
+auto_respond: false
+suspicious_process_names:
+  - notepad.exe
+  - cmd.exe
 ```
 
 ## Features
@@ -99,7 +115,15 @@ log_file: guardsweep.log
 - File creation detection in specified directories
 - Network connection tracking with blacklisted IP alerts
 - Modular and extensible design for adding new detection rules
+- Behavioral analytics detecting rapid process creation spikes
+- Automated response to suspicious processes (optional automatic termination)
 - Cross-platform support (Windows and Linux)
+
+## Notes
+
+- The behavioral analytics feature raises warnings if many new processes start in a short time, helping detect suspicious activity patterns.
+- Use `auto_respond` carefully: automatic termination can interrupt legitimate processes if misconfigured.
+- Extend `suspicious_process_names` with process names you want to detect and optionally kill automatically.
 
 ## About
 

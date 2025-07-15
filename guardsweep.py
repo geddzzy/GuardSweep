@@ -7,7 +7,8 @@ import logging
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
+import collections
 
 # Set up logging to a file with timestamp and severity formatting
 def setup_logging(log_file):
@@ -71,21 +72,41 @@ def start_file_monitor(monitor_dir, ignored_paths, suspicious_extensions):
 
 
 # -------------------------
-def monitor_processes():
+def monitor_processes(auto_respond, suspicious_process_names):
     """
     Monitor for new processes starting on the system.
     Alerts when a new process PID is detected.
+    Implements behavioral analytic detection of rapid process creation.
+    Optionally terminates suspicious processes automatically.
     """
     known_pids = set(psutil.pids())
+    process_events = collections.deque(maxlen=100)  # track recent process start times
+
     while True:
         current_pids = set(psutil.pids())
         new_pids = current_pids - known_pids
+        now = datetime.now()
+
         for pid in new_pids:
             try:
                 proc = psutil.Process(pid)
-                alert(f"New process started: {proc.name()} (PID {pid})")
+                proc_name = proc.name()
+                alert(f"New process started: {proc_name} (PID {pid})")
+                process_events.append(now)
+
+                # Behavioral check: if >10 processes in 10 seconds, alert warning
+                recent_events = [t for t in process_events if now - t < timedelta(seconds=10)]
+                if len(recent_events) > 10:
+                    alert("High process creation rate detected!", severity="WARNING")
+
+                # Automated response: terminate suspicious process(es)
+                if auto_respond and proc_name.lower() in suspicious_process_names:
+                    proc.terminate()
+                    alert(f"Automatically terminated suspicious process PID {pid}", severity="WARNING")
+
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
+
         known_pids = current_pids
         time.sleep(3)
 
@@ -104,18 +125,15 @@ def monitor_network(blacklisted_ips):
 
 # -------------------------
 def main():
-    # Set up logging to a file with timestamp and severity formatting
     parser = ArgumentParser(
         description="GuardSweep - Cross-platform EDR tool",
         default_config_files=["config.yaml"],
     )
-    # Allow specifying config file (YAML/JSON) from CLI
     parser.add_argument(
         "--config",
         action=ActionConfigFile,
         help="Path to config YAML/JSON file",
     )
-    # Define command-line arguments that override config file values
     parser.add_argument(
         "--blacklisted_ips",
         nargs="*",
@@ -140,13 +158,24 @@ def main():
         help="File extensions to alert on (overrides config file)",
     )
     parser.add_argument(
-        "--log_file", default=None, help="Log file path (overrides config file)"
+        "--log_file",
+        default=None,
+        help="Log file path (overrides config file)",
+    )
+    parser.add_argument(
+        "--auto_respond",
+        action="store_true",
+        help="Automatically respond to suspicious process detections (kill process)",
+    )
+    parser.add_argument(
+        "--suspicious_process_names",
+        nargs="*",
+        default=None,
+        help="List of suspicious process names to auto-terminate (case-insensitive)",
     )
 
-    # Parse args from CLI or config file
     args = parser.parse_args()
 
-    # Fallback default values if not provided by user
     blacklisted_ips = args.blacklisted_ips or ["1.2.3.4", "8.8.8.8"]
     monitor_dir = args.monitor_dir or os.path.expanduser("~")
     ignored_paths = args.ignored_paths or []
@@ -160,27 +189,24 @@ def main():
         ".scr",
     ]
     log_file = args.log_file or "guardsweep.log"
+    auto_respond = args.auto_respond
+    suspicious_process_names = {name.lower() for name in (args.suspicious_process_names or [])}
 
-    # Initialize logging and notify user
     setup_logging(log_file)
     alert(f"GuardSweep started. Monitoring directory: {monitor_dir}", severity="INFO")
 
-    # Start file monitoring in a separate thread
     observer = start_file_monitor(monitor_dir, ignored_paths, suspicious_extensions)
     file_thread = threading.Thread(target=observer.join, daemon=True)
     file_thread.start()
 
-    # Start process monitoring in a separate thread
-    proc_thread = threading.Thread(target=monitor_processes, daemon=True)
+    proc_thread = threading.Thread(
+        target=monitor_processes, args=(auto_respond, suspicious_process_names), daemon=True
+    )
     proc_thread.start()
 
-    # Start network monitoring in a separate thread
-    net_thread = threading.Thread(
-        target=monitor_network, args=(blacklisted_ips,), daemon=True
-    )
+    net_thread = threading.Thread(target=monitor_network, args=(blacklisted_ips,), daemon=True)
     net_thread.start()
 
-    # Keep main thread alive; clean exit on Ctrl+C
     try:
         while True:
             time.sleep(1)
@@ -189,6 +215,6 @@ def main():
         alert("GuardSweep stopped.", severity="INFO")
         sys.exit(0)
 
-# Entry point to run the GuardSweep EDR
+
 if __name__ == "__main__":
     main()
