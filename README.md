@@ -9,7 +9,39 @@
                                                    |_|
 ```
 
-GuardSweep is a lightweight, Python-based EDR (Endpoint Detection and Response) tool that monitors system processes, file creations, and network connections in real-time across Windows and Linux. It helps detect suspicious activity and alert users, serving as a foundation for building automated endpoint security defenses.
+GuardSweep is a lightweight, Python-based EDR (Endpoint Detection and Response) tool that monitors system processes, file creations, and network connections in real-time across Windows and Linux. It detects suspicious activity and alerts users, serving as a foundation for building automated endpoint security defenses.
+
+## Project Structure
+
+```
+guardsweep/
+├── guardsweep.py             # Main entrypoint and CLI orchestration
+
+├── config/
+│   └── config.py             # CLI argument parsing and logging setup
+
+├── core/
+│   ├── alerts.py             # Alert and logging helper functions
+│   ├── quarantine.py         # File quarantine helpers
+│   └── utils.py              # (Optional) Utility helpers
+
+├── detection/
+│   ├── yara_scanner.py       # YARA rule loading, file scanning, quarantine integration
+│   ├── file_monitor.py       # Filesystem monitoring using watchdog
+│   └── process_monitor.py    # Process monitoring and behavioral analytics
+
+├── intel/
+│   ├── network_monitor.py    # Network connections monitoring and blocking
+│   └── spamhaus_feed.py      # Spamhaus DROP feed downloading and parsing
+
+├── yara_rules/               # Directory containing YARA rules (e.g. upx_packed.yar)
+    ├── upx_packed.yar        # Sample YARA rule
+
+├── config.yaml               # Default configuration file
+├── requirements.txt          # Python dependencies
+├── README.md                 # This file
+└── LICENSE                   # License file
+```
 
 ## Installation
 
@@ -46,7 +78,7 @@ python guardsweep.py \
 
 ---
 
-You can enable automated response to suspicious process creations by using:
+Enable automatic process termination for suspicious process names:
 
 ```bash
 python guardsweep.py --auto_respond --suspicious_process_names notepad.exe cmd.exe
@@ -58,7 +90,7 @@ The behavioral analytics feature alerts if a high rate of process creation is de
 
 ---
 
-You can enable YARA-based file scanning and automatic quarantine of suspicious files with:
+Enable YARA scanning with automatic quarantine of suspicious files:
 
 ```bash
 python guardsweep.py --enable_quarantine
@@ -68,100 +100,55 @@ Place your YARA rules files (e.g., `upx_packed.yar`) in the `yara_rules` directo
 
 ---
 
+Enable automatic blocking of malicious network IPs detected via Spamhaus DROP feed:
+
+```bash
+python guardsweep.py --enable_network_blocking
+```
+
+---
+
 GuardSweep will continuously monitor and print alerts to the console.
 
 ## Configuration
 
 GuardSweep provides configurable options directly in the guardsweep.py script to tailor monitoring to your environment:
 
-- monitor_dir: The root directory to watch for file creation events (default: user’s home directory).
-- ignored_paths: List of paths to exclude from file monitoring. Helps reduce noise from temp or browser cache folders.
-- blacklisted_ips: List of IPs to flag if network connections are made to them.
-- suspicious_extensions: File extensions that trigger alerts when new files are created (e.g., .exe, .dll, .bat).
-- log_file: Path to write logs.
-- auto_respond: Boolean flag to enable automatic termination of suspicious processes.
-- suspicious_process_names: List of process executable names that trigger automatic termination (case-insensitive).
-- enable_quarantine: Enable file quarantine when YARA rules match.
-- yara_rules_dir: Directory containing YARA rules files to load (default: `./yara_rules`).
+- monitor_dir: Directory root to watch for new files.
+- ignored_paths: Paths to exclude from file monitoring.
+- suspicious_extensions: File extensions (e.g., .exe, .dll) to trigger alerts.
+- blacklisted_ips: IP addresses blacklisted explicitly (alongside Spamhaus feed).
+- log_file: Location of log file.
+- auto_respond: Automatically terminate suspicious processes.
+- suspicious_process_names: List of process executable names triggering termination.
+- enable_quarantine: Quarantine files matched by YARA rules.
+- enable_network_blocking: Block connections to malicious IPs from Spamhaus feed.
 
-To customize, edit config.yaml or pass arguments via CLI.
+## YARA Rules
 
-## Project Structure
+Sample YARA rules are loaded from the yara_rules/ directory. An example rule included:
 
-```
-guardsweep/
-├── guardsweep.py           # Main logic
-├── yara_rules/             # Directory containing YARA rules
-│   └── upx_packed.yar      # Example YARA rule detecting UPX-packed executables
-├── config.yaml             # Config file
-├── requirements.txt        # Dependencies
-├── LICENSE
-└── README.md
-```
+- upx_packed.yar: Detects executables packed with the UPX packer, frequently used by malware to obfuscate payloads.
 
-- guardsweep.py – Main monitoring script
-- requirements.txt – Python dependencies
-- LICENSE – License file
-- README.md – This file!
-- .gitignore – Files and folders to exclude from git
-
-## Example config.yaml
-
-```yaml
-monitor_dir: C:/Users/Admin/Documents
-ignored_paths:
-  - C:/Windows/Temp
-  - \AppData\Local\Temp
-  - \AppData\Roaming\Code\Cache
-suspicious_extensions:
-  - .exe
-  - .dll
-  - .bat
-blacklisted_ips:
-  - 1.2.3.4
-  - 8.8.8.8
-log_file: guardsweep.log
-auto_respond: false
-suspicious_process_names:
-  - notepad.exe
-  - cmd.exe
-```
+You can add your own .yar or .yara files to extend detection capabilities.
 
 ## Features
 
-- Real-time monitoring of new processes
-- File creation detection in specified directories
-- Network connection tracking with blacklisted IP alerts
-- Modular and extensible design for adding new detection rules
-- Behavioral analytics detecting rapid process creation spikes
-- Automated response to suspicious processes (optional automatic termination)
-- Cross-platform support (Windows and Linux)
+- Real-time process creation monitoring with behavioral analytics
+- File system monitoring with YARA-based scanning and quarantine
+- Network connection monitoring with integration of Spamhaus DROP threat intelligence
+- Automated response capabilities including process termination and network blocking
+- Modular design for easy extension and maintenance
+- Cross-platform support: Windows and Linux
 
 ## Notes
 
 - The behavioral analytics feature raises warnings if many new processes start in a short time, helping detect suspicious activity patterns.
 - Use `auto_respond` carefully: automatic termination can interrupt legitimate processes if misconfigured.
 - Extend `suspicious_process_names` with process names you want to detect and optionally kill automatically.
-
-## About
-
-GuardSweep is developed by a security engineer with a passion for building practical, open-source tools that strengthen endpoint visibility and defense. This project reflects a focused effort to deliver a reliable, real-time EDR solution built entirely in Python, with cross-platform support and modular design at its core.
-
-Whether you're a blue teamer, threat hunter, or cybersecurity enthusiast, you're welcome to use, contribute to, or extend GuardSweep to fit your environment. Collaboration and innovation are always encouraged.
-
-## Dependencies
-
-GuardSweep relies on a few powerful Python libraries:
-
-- psutil for process and network monitoring
-- watchdog for file system event monitoring
-- jsonargparse for YAML/JSON CLI config parsing
-
-Install all with:
-
-```bash
-pip install -r requirements.txt
-```
+- The included YARA rule `upx_packed.yar` detects files packed with UPX — a common packer often used by malware.  
+- You can customize or add further YARA rules inside the `yara_rules` directory to extend detection capabilities.  
+- Quarantine moves suspicious files to the `quarantine` folder to safely isolate them.
 
 ## Contributing
 

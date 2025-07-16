@@ -1,2 +1,5 @@
 #Ignore guardweep.log
 guardsweep.log
+.vscode
+__pycache__/
+*.pyc
