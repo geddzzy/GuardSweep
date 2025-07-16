@@ -1,4 +1,7 @@
+# GuardSweep Configuration Example with full feature set
+
 monitor_dir: C:/Users/Admin/Documents
+
 ignored_paths:
   - C:/Windows/Temp
   - C:/Windows/Logs
@@ -21,6 +24,7 @@ ignored_paths:
   - \AppData\Local\Microsoft\Office\UnsavedFiles
   - \AppData\Local\CrashDumps
   - \AppData\Local\Temp
+
 suspicious_extensions:
   - .exe
   - .dll
@@ -29,7 +33,22 @@ suspicious_extensions:
   - .js
   - .vbs
   - .scr
+
 blacklisted_ips:
   - 1.2.3.4
   - 8.8.8.8
+
 log_file: guardsweep.log
+
+auto_respond: false           # Automatically terminate suspicious processes (optional)
+
+suspicious_process_names:     # Processes to auto-terminate if auto_respond enabled
+  - notepad.exe
+  - cmd.exe
+
+enable_quarantine: true       # Enable file quarantine on YARA matches (moves file to quarantine folder)
+
+enable_network_blocking: true # Block network connections to detected malicious IPs (requires admin)
+
+# Optional: directory if you want to override where YARA rules are loaded from
+# yara_rules_dir: ./yara_rules
