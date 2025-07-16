@@ -35,7 +35,7 @@ guardsweep/
 │   └── spamhaus_feed.py      # Spamhaus DROP feed downloading and parsing
 
 ├── yara_rules/               # Directory containing YARA rules (e.g. upx_packed.yar)
-    ├── upx_packed.yar        # Sample YARA rule
+    └── upx_packed.yar        # Sample YARA rule
 
 ├── config.yaml               # Default configuration file
 ├── requirements.txt          # Python dependencies
