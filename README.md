@@ -125,17 +125,19 @@ GuardSweep will continuously monitor and print alerts to the console.
 
 ## Configuration
 
-GuardSweep provides configurable options directly in the guardsweep.py script to tailor monitoring to your environment:
+GuardSweep is configured using the config.yaml file, which allows for easy management of all settings.
+Any option in this file can also be overridden at runtime using command-line arguments.
 
-- **monitor_dir**: Directory root to watch for new files.
-- **ignored_paths**: Paths to exclude from file monitoring.
-- **suspicious_extensions**: File extensions (e.g., .exe, .dll) to trigger alerts.
-- **blacklisted_ips**: IP addresses blacklisted explicitly (alongside Spamhaus feed).
-- **log_file**: Location of log file.
-- **auto_respond**: Automatically terminate suspicious processes.
-- **suspicious_process_names**: List of process executable names triggering termination.
-- **enable_quarantine**: Quarantine files matched by YARA rules.
-- **enable_network_blocking**: Block connections to malicious IPs from Spamhaus feed.
+- monitor_dir: The root directory to monitor for new files.
+- ignored_paths: A list of path substrings to exclude from file monitoring (e.g., temp folders).
+- suspicious_extensions: File extensions (e.g., .exe, .dll) that will trigger a specific warning when created.
+- suspicious_process_names: A list of process names that will trigger a CRITICAL alert and be terminated if auto_respond is enabled.
+- blacklisted_ips: A list of IP addresses to block manually, in addition to the Spamhaus feed.
+- log_file: The path for the output log file.
+- virustotal_api_key: Your free API key from VirusTotal, which enables file hash scanning against its database.
+- auto_respond: A boolean (true or false) to automatically terminate suspicious processes.
+- enable_quarantine: A boolean (true or false) to move files that match a YARA rule to the quarantine folder.
+- enable_network_blocking: A boolean (true or false) to automatically create firewall rules to block malicious IPs. (Requires admin privileges).
 
 ## YARA Rules
 
@@ -147,21 +149,21 @@ You can add your own .yar or .yara files to extend detection capabilities.
 
 ## Features
 
-- Real-time process creation monitoring with behavioral analytics
-- File system monitoring with YARA-based scanning and quarantine
-- Network connection monitoring with integration of Spamhaus DROP threat intelligence
-- Automated response capabilities including process termination and network blocking
-- Modular design for easy extension and maintenance
-- Cross-platform support: Windows and Linux
+- Deep Process Analysis: Monitors new processes and their full command-line arguments to uncover malware masquerading as legitimate system tools. Includes behavioral analytics to detect suspicious, rapid process creation.
+- Threat-Intelligence Driven File Scanning: Scans every new file with YARA for signature-based threats and automatically checks file hashes against the VirusTotal API to leverage community intelligence.
+- Network Connection Monitoring: Integrates the Spamhaus DROP feed to detect and block connections to known malicious subnets and command-and-control servers.
+- Windows Persistence Detection: Watches critical Windows Registry autorun keys to alert on common persistence techniques used by malware to survive reboots.
+- Automated Response: Capable of automatically terminating suspicious processes, quarantining malicious files, and blocking malicious network IPs via the system firewall.
+- Cross-Platform & Modular: Built with a modular design for easy extension and supports both Windows and Linux environments.
 
 ## Notes
 
-- The behavioral analytics feature raises warnings if many new processes start in a short time, helping detect suspicious activity patterns.
-- Use `auto_respond` carefully: automatic termination can interrupt legitimate processes if misconfigured.
-- Extend `suspicious_process_names` with process names you want to detect and optionally kill automatically.
-- The included YARA rule `upx_packed.yar` detects files packed with UPX — a common packer often used by malware.  
-- You can customize or add further YARA rules inside the `yara_rules` directory to extend detection capabilities.  
-- Quarantine moves suspicious files to the `quarantine` folder to safely isolate them.
+- Command-Line Analysis: GuardSweep logs the command-line arguments of new processes, which is crucial for detecting legitimate tools like powershell.exe being used for malicious purposes.
+- VirusTotal Integration: By adding a free API key to your config.yaml, you enable GuardSweep to get a second opinion on new files from over 70 antivirus engines.
+- Run as Administrator: For full visibility into system processes and to enable network blocking, you must run GuardSweep with administrator or root privileges.
+- Persistence Alerts: The registry monitoring feature provides an early warning if a program tries to configure itself to start automatically on the next system boot.
+- YARA Rules: Extend GuardSweep's detection capabilities by adding your own .yar or .yara rules to the yara_rules/ directory.
+- Safe Response: The auto_respond, enable_quarantine, and enable_network_blocking features are powerful but should be configured carefully to avoid disrupting legitimate system activity.
 
 ## Contributing
 
