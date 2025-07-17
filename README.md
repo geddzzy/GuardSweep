@@ -15,32 +15,34 @@ GuardSweep is a lightweight, Python-based EDR (Endpoint Detection and Response) 
 
 ```
 guardsweep/
-├── guardsweep.py             # Main entrypoint and CLI orchestration
+├── guardsweep.py               # Main entrypoint and CLI orchestration
 
 ├── config/
-│   └── config.py             # CLI argument parsing and logging setup
+│   └── config.py               # CLI argument parsing and logging setup
 
 ├── core/
-│   ├── alerts.py             # Alert and logging helper functions
-│   ├── quarantine.py         # File quarantine helpers
-│   └── utils.py              # (Optional) Utility helpers
+│   ├── alerts.py               # Alert and logging helper functions
+│   ├── quarantine.py           # File quarantine helpers
+│   └── utils.py                # (Optional) Utility helpers
 
 ├── detection/
-│   ├── yara_scanner.py       # YARA rule loading, file scanning, quarantine integration
-│   ├── file_monitor.py       # Filesystem monitoring using watchdog
-│   └── process_monitor.py    # Process monitoring and behavioral analytics
+│   ├── yara_scanner.py         # YARA rule loading, file scanning, quarantine integration
+│   ├── file_monitor.py         # Filesystem monitoring using watchdog
+    ├── persistence_monitor.py  # Windows Registry persistence monitoring
+│   └── process_monitor.py      # Process monitoring and behavioral analytics
 
 ├── intel/
-│   ├── network_monitor.py    # Network connections monitoring and blocking
-│   └── spamhaus_feed.py      # Spamhaus DROP feed downloading and parsing
+│   ├── network_monitor.py      # Network connections monitoring and blocking
+│   ├── spamhaus_feed.py        # Spamhaus DROP feed downloading and parsing
+    └── threat_intel.py         # File hashing and VirusTotal API integration
+    
+├── yara_rules/                 # Directory containing YARA rules (e.g. upx_packed.yar)
+    └── upx_packed.yar          # Sample YARA rule
 
-├── yara_rules/               # Directory containing YARA rules (e.g. upx_packed.yar)
-    └── upx_packed.yar        # Sample YARA rule
-
-├── config.yaml               # Default configuration file
-├── requirements.txt          # Python dependencies
-├── README.md                 # This file
-└── LICENSE                   # License file
+├── config.yaml                 # Default configuration file
+├── requirements.txt            # Python dependencies
+├── README.md                   # This file
+└── LICENSE                     # License file
 ```
 
 ## Installation
@@ -60,20 +62,20 @@ pip install -r requirements.txt
 
 ## Usage
 
+Run GuardSweep from an **administrator/root terminal** to ensure it has full visibility into system processes.
+
+---
+
 Run using a YAML configuration (default: config.yaml) or override values via CLI:
 
 ```bash
 python guardsweep.py --config config.yaml
 ```
 
-Or override any field from the config file directly via CLI:
+Override any setting via the command line:
 
 ```bash
-python guardsweep.py \
-  --monitor_dir "C:/Users/Admin/Documents" \
-  --ignored_paths "C:/Windows/Temp" "C:/Windows/Logs" \
-  --suspicious_extensions .exe .dll .bat \
-  --blacklisted_ips 8.8.8.8 1.2.3.4
+python guardsweep.py --monitor_dir "C:/Users/Admin/Downloads" --suspicious_process_names "mimikatz.exe"
 ```
 
 ---
@@ -108,21 +110,32 @@ python guardsweep.py --enable_network_blocking
 
 ---
 
+Enable VirusTotal for Enhanced File Scanning:
+
+GuardSweep automatically checks suspicious files against VirusTotal if an API key is present in the configuration.
+To enable this, add your key to config.yaml:
+
+```yaml
+virustotal_api_key: "YOUR_API_KEY_HERE"
+```
+
+---
+
 GuardSweep will continuously monitor and print alerts to the console.
 
 ## Configuration
 
 GuardSweep provides configurable options directly in the guardsweep.py script to tailor monitoring to your environment:
 
-- monitor_dir: Directory root to watch for new files.
-- ignored_paths: Paths to exclude from file monitoring.
-- suspicious_extensions: File extensions (e.g., .exe, .dll) to trigger alerts.
-- blacklisted_ips: IP addresses blacklisted explicitly (alongside Spamhaus feed).
-- log_file: Location of log file.
-- auto_respond: Automatically terminate suspicious processes.
-- suspicious_process_names: List of process executable names triggering termination.
-- enable_quarantine: Quarantine files matched by YARA rules.
-- enable_network_blocking: Block connections to malicious IPs from Spamhaus feed.
+- **monitor_dir**: Directory root to watch for new files.
+- **ignored_paths**: Paths to exclude from file monitoring.
+- **suspicious_extensions**: File extensions (e.g., .exe, .dll) to trigger alerts.
+- **blacklisted_ips**: IP addresses blacklisted explicitly (alongside Spamhaus feed).
+- **log_file**: Location of log file.
+- **auto_respond**: Automatically terminate suspicious processes.
+- **suspicious_process_names**: List of process executable names triggering termination.
+- **enable_quarantine**: Quarantine files matched by YARA rules.
+- **enable_network_blocking**: Block connections to malicious IPs from Spamhaus feed.
 
 ## YARA Rules
 

@@ -1,13 +1,18 @@
+# In core/alerts.py
 from datetime import datetime
 import logging
 
 def alert(message, severity="ALERT"):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    formatted_msg = f"[{timestamp}] [{severity}] {message}"
-    print(formatted_msg)
+    """
+    Logs a message with a specific severity level.
+    The logging configuration in config.py handles all formatting and output.
+    """
+    
     if severity == "ALERT":
-        logging.info(formatted_msg)
+        # Using CRITICAL for alerts makes them stand out more.
+        logging.critical(message)
     elif severity == "WARNING":
-        logging.warning(formatted_msg)
+        logging.warning(message)
     else:
-        logging.info(formatted_msg)
+        # Default to INFO for general messages.
+        logging.info(message)

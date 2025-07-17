@@ -7,7 +7,7 @@ from intel.spamhaus_feed import start_spamhaus_thread
 from intel.network_monitor import monitor_network
 
 import threading
-import time
+import time 
 import sys
 
 def main():
@@ -26,6 +26,7 @@ def main():
         args.suspicious_extensions,
         args.enable_quarantine,
         yara_rules,
+        args.virustotal_api_key
     )
     threading.Thread(target=observer.join, daemon=True).start()
 

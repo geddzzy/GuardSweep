@@ -52,3 +52,5 @@ enable_network_blocking: true # Block network connections to detected malicious 
 
 # Optional: directory if you want to override where YARA rules are loaded from
 # yara_rules_dir: ./yara_rules
+
+virustotal_api_key: "YOUR_API_KEY_HERE"
