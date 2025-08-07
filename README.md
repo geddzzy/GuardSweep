@@ -27,7 +27,7 @@ guardsweep/
 ├── detection/
 │   ├── yara_scanner.py         # YARA rule loading, file scanning, quarantine integration
 │   ├── file_monitor.py         # Filesystem monitoring using watchdog
-    ├── persistence_monitor.py  # Windows Registry persistence monitoring
+    ├── persistence_monitor.py  # Windows persistence monitoring (Registry, Tasks)
 │   └── process_monitor.py      # Process monitoring and behavioral analytics
 
 ├── intel/
@@ -151,7 +151,7 @@ You can add your own .yar or .yara files to extend detection capabilities.
 - Deep Process Analysis: Monitors new processes and their full command-line arguments to uncover malware masquerading as legitimate system tools. Includes behavioral analytics to detect suspicious, rapid process creation.
 - Threat-Intelligence Driven File Scanning: Scans every new file with YARA for signature-based threats and automatically checks file hashes against the VirusTotal API to leverage community intelligence.
 - Network Connection Monitoring: Integrates the Spamhaus DROP feed to detect and block connections to known malicious subnets and command-and-control servers.
-- Windows Persistence Detection: Watches critical Windows Registry autorun keys to alert on common persistence techniques used by malware to survive reboots.
+- Windows Persistence Detection: Monitors critical areas like Registry autorun keys and new Scheduled Tasks to detect common persistence techniques.
 - Automated Response: Capable of automatically terminating suspicious processes, quarantining malicious files, and blocking malicious network IPs via the system firewall.
 - Cross-Platform & Modular: Built with a modular design for easy extension and supports both Windows and Linux environments.
 
