@@ -22,8 +22,7 @@ guardsweep/
 
 ├── core/
 │   ├── alerts.py               # Alert and logging helper functions
-│   ├── quarantine.py           # File quarantine helpers
-│   └── utils.py                # (Optional) Utility helpers
+│   └── quarantine.py           # File quarantine helpers
 
 ├── detection/
 │   ├── yara_scanner.py         # YARA rule loading, file scanning, quarantine integration
