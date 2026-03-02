@@ -5,7 +5,7 @@ from watchdog.events import FileSystemEventHandler
 from core.alerts import alert
 from detection.yara_scanner import scan_file_with_yara
 from core.quarantine import quarantine_file
-from intel.threat_intel import get_file_hash, check_hash_virustotal
+from intel.threat_intel import get_file_hash, enqueue_virustotal_check
 
 class FileMonitor(FileSystemEventHandler):
     def __init__(self, ignored_paths, suspicious_extensions, enable_quarantine, yara_rules, vt_api_key):
@@ -40,9 +40,7 @@ class FileMonitor(FileSystemEventHandler):
         file_hash = get_file_hash(event.src_path)
         if file_hash:
             alert(f"File hash (SHA-256): {file_hash}")
-            # This check runs in the same thread. For a production system,
-            # you might move this to a separate thread to avoid blocking.
-            check_hash_virustotal(self.vt_api_key, file_hash, event.src_path)
+            enqueue_virustotal_check(self.vt_api_key, file_hash, event.src_path)
 
         # YARA scan
         matches = scan_file_with_yara(self.yara_rules, event.src_path)

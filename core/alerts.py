@@ -1,18 +1,17 @@
-# In core/alerts.py
-from datetime import datetime
 import logging
 
+SEVERITY_TO_LEVEL = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+    # Backward-compatible alias used across this codebase.
+    "ALERT": logging.CRITICAL,
+}
+
+
 def alert(message, severity="ALERT"):
-    """
-    Logs a message with a specific severity level.
-    The logging configuration in config.py handles all formatting and output.
-    """
-    
-    if severity == "ALERT":
-        # Using CRITICAL for alerts makes them stand out more.
-        logging.critical(message)
-    elif severity == "WARNING":
-        logging.warning(message)
-    else:
-        # Default to INFO for general messages.
-        logging.info(message)
+    """Log a message with a normalized severity level."""
+    level = SEVERITY_TO_LEVEL.get(str(severity).upper(), logging.INFO)
+    logging.log(level, message)

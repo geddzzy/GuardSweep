@@ -1,4 +1,3 @@
-import winreg
 import subprocess
 import time
 import platform
@@ -7,16 +6,28 @@ from core.alerts import alert
 # --- Registry Monitoring Section ---
 
 AUTORUN_KEYS = [
-    (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run"),
-    (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\RunOnce"),
-    (winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run"),
-    (winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\RunOnce"),
-    (winreg.HKEY_LOCAL_MACHINE, r"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run"),
-    (winreg.HKEY_LOCAL_MACHINE, r"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\RunOnce"),
+    ("HKEY_CURRENT_USER", r"Software\Microsoft\Windows\CurrentVersion\Run"),
+    ("HKEY_CURRENT_USER", r"Software\Microsoft\Windows\CurrentVersion\RunOnce"),
+    ("HKEY_LOCAL_MACHINE", r"Software\Microsoft\Windows\CurrentVersion\Run"),
+    ("HKEY_LOCAL_MACHINE", r"Software\Microsoft\Windows\CurrentVersion\RunOnce"),
+    ("HKEY_LOCAL_MACHINE", r"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run"),
+    ("HKEY_LOCAL_MACHINE", r"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\RunOnce"),
 ]
 
-def get_key_snapshot(hkey, key_path):
+
+def _get_winreg():
+    import winreg
+    return winreg
+
+
+def _hkey_name_to_const(winreg_mod, hkey_name):
+    return getattr(winreg_mod, hkey_name)
+
+
+def get_key_snapshot(hkey_name, key_path):
     """Takes a snapshot of the values in a given registry key."""
+    winreg = _get_winreg()
+    hkey = _hkey_name_to_const(winreg, hkey_name)
     entries = set()
     try:
         with winreg.OpenKey(hkey, key_path, 0, winreg.KEY_READ) as key:
@@ -50,10 +61,12 @@ def monitor_registry_autoruns():
 
             snapshots[full_path_str] = current_snapshot
 
-def hkey_to_str(hkey):
-    """Helper to convert HKEY constant to string for logging."""
-    if hkey == winreg.HKEY_CURRENT_USER: return "HKCU"
-    if hkey == winreg.HKEY_LOCAL_MACHINE: return "HKLM"
+def hkey_to_str(hkey_name):
+    """Helper to convert HKEY name to short string for logging."""
+    if hkey_name == "HKEY_CURRENT_USER":
+        return "HKCU"
+    if hkey_name == "HKEY_LOCAL_MACHINE":
+        return "HKLM"
     return "HKEY"
 
 

@@ -1,5 +1,21 @@
-#Ignore guardweep.log
-guardsweep.log
-.vscode
+# Local environment
+venv/
+.venv/
+.env
+
+# Editors
+.vscode/
+.idea/
+
+# Python caches
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+
+# Runtime artifacts
+guardsweep.log
+*.log
+quarantine/

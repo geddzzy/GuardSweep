@@ -7,8 +7,6 @@ from core.alerts import alert
 from detection.yara_scanner import compile_yara_rules
 from detection.file_monitor import start_file_monitor
 from detection.process_monitor import monitor_processes
-# --- MODIFIED: Import the new persistence monitor entrypoint ---
-from detection.persistence_monitor import start_persistence_monitor
 from intel.spamhaus_feed import start_spamhaus_thread
 from intel.network_monitor import monitor_network
 
@@ -54,6 +52,7 @@ def main():
 
     # 4. --- NEW: Start all persistence monitors ---
     # This single function call will handle starting the correct threads if on Windows.
+    from detection.persistence_monitor import start_persistence_monitor
     start_persistence_monitor()
 
 
