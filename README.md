@@ -323,6 +323,12 @@ python guardsweep.py \
   --blacklisted_ips 1.2.3.4 5.6.7.8
 ```
 
+Bounded run for CI/lab automation:
+
+```bash
+python guardsweep.py --run_seconds 60 --status_json artifacts/startup_status.json
+```
+
 ## Detection Modules Deep Dive
 
 ### `detection/file_monitor.py`

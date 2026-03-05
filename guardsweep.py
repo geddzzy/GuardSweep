@@ -4,6 +4,7 @@ import sys
 import platform
 from config.config import parse_args, setup_logging
 from core.alerts import alert
+from core.status import write_startup_status
 from detection.yara_scanner import compile_yara_rules
 from detection.file_monitor import start_file_monitor
 from detection.process_monitor import monitor_processes
@@ -15,6 +16,9 @@ def main():
 
     setup_logging(args.log_file)
     alert(f"GuardSweep started. Monitoring directory: {args.monitor_dir}", severity="INFO")
+    if args.status_json:
+        status_path = write_startup_status(args.status_json, args)
+        alert(f"Wrote startup status: {status_path}", severity="INFO")
 
     # Start threat intelligence feed
     start_spamhaus_thread()
@@ -57,15 +61,20 @@ def main():
 
 
     # Keep the main thread alive to allow daemon threads to run
+    start = time.time()
     try:
         while True:
             time.sleep(1)
+            if args.run_seconds > 0 and (time.time() - start) >= args.run_seconds:
+                alert(f"GuardSweep completed bounded run ({args.run_seconds}s).", severity="INFO")
+                break
     except KeyboardInterrupt:
+        alert("GuardSweep stopped by user.", severity="INFO")
+    finally:
         if 'observer' in locals() and observer.is_alive():
             observer.stop()
             observer.join()
-        alert("GuardSweep stopped by user.", severity="INFO")
-        sys.exit(0)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

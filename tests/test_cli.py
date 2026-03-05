@@ -13,6 +13,10 @@ def test_parse_args_override_flags(monkeypatch):
             "C:/temp",
             "--auto_respond",
             "--enable_quarantine",
+            "--run_seconds",
+            "15",
+            "--status_json",
+            "status/startup.json",
             "--suspicious_process_names",
             "cmd.exe",
             "powershell.exe",
@@ -24,4 +28,6 @@ def test_parse_args_override_flags(monkeypatch):
     assert args.monitor_dir == "C:/temp"
     assert args.auto_respond is True
     assert args.enable_quarantine is True
+    assert args.run_seconds == 15
+    assert args.status_json == "status/startup.json"
     assert args.suspicious_process_names == ["cmd.exe", "powershell.exe"]

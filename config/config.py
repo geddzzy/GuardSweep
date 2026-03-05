@@ -1,10 +1,16 @@
 # In config/config.py
 
-from jsonargparse import ArgumentParser, ActionConfigFile
+import argparse
 import os
 import logging
 import sys
 import colorama
+
+try:
+    from jsonargparse import ArgumentParser, ActionConfigFile
+except Exception:  # pragma: no cover
+    ArgumentParser = argparse.ArgumentParser  # type: ignore[assignment]
+    ActionConfigFile = None
 
 class ColorFormatter(logging.Formatter):
     level_colors = {
@@ -23,9 +29,12 @@ class ColorFormatter(logging.Formatter):
 def parse_args():
     parser = ArgumentParser(
         description="GuardSweep - Cross-platform EDR tool",
-        default_config_files=["config.yaml"], 
     )
-    parser.add_argument("--config", action=ActionConfigFile, help="Path to a custom config YAML/JSON file.")
+    if ActionConfigFile is not None:
+        parser.default_config_files = ["config.yaml"]  # type: ignore[attr-defined]
+        parser.add_argument("--config", action=ActionConfigFile, help="Path to a custom config YAML/JSON file.")
+    else:
+        parser.add_argument("--config", type=str, default=None, help="Config file path (requires jsonargparse to load).")
     parser.add_argument("--log_file", type=str, default="guardsweep.log", help="Log file path.") 
     parser.add_argument("--monitor_dir", type=str, default=os.path.expanduser("~"), help="Directory to monitor for file changes.")
     parser.add_argument("--ignored_paths", nargs="*", default=[], help="Paths to ignore for file monitoring.")
@@ -36,6 +45,8 @@ def parse_args():
     parser.add_argument("--auto_respond", action="store_true", default=False, help="Automatically terminate suspicious processes.")
     parser.add_argument("--enable_quarantine", action="store_true", default=False, help="Enable file quarantine for suspicious YARA matches.")
     parser.add_argument("--enable_network_blocking", action="store_true", default=False, help="Enable automatic blocking of malicious network IPs.")
+    parser.add_argument("--run_seconds", type=int, default=0, help="Optional bounded runtime in seconds (0 means run forever).")
+    parser.add_argument("--status_json", type=str, default=None, help="Optional path to write startup status JSON.")
     args = parser.parse_args()
     return args
 
