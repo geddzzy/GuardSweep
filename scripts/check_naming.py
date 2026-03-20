@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import ast
@@ -12,8 +12,8 @@ except ModuleNotFoundError:  # pragma: no cover
     tomllib = None
 
 REPO_NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-SNAKE_TOKEN_RE = re.compile(r"^[a-z0-9_]+$")
-SNAKE_FILE_RE = re.compile(r"^[a-z0-9_]+(?:\.[a-z0-9_]+)*$")
+LOWER_TOKEN_RE = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$")
+LOWER_FILE_RE = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*(?:\.[a-z0-9]+(?:[-_][a-z0-9]+)*)*$")
 CLI_NAME_RE = re.compile(r"^[a-z0-9]+$")
 MODULE_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
@@ -21,6 +21,12 @@ IGNORED_DIRS = {
     ".git",
     ".github",
     ".venv",
+    ".dart_tool",
+    ".next",
+    ".nuxt",
+    ".svelte-kit",
+    ".astro",
+    ".parcel-cache",
     "venv",
     "node_modules",
     "__pycache__",
@@ -31,6 +37,14 @@ IGNORED_DIRS = {
     "reports",
     "dist",
     "build",
+    "coverage",
+    "android",
+    "ios",
+    "linux",
+    "macos",
+    "windows",
+    "web",
+    "workspaces",
 }
 
 IGNORED_FILES = {
@@ -54,6 +68,24 @@ IGNORED_SUFFIXES = (
     ".pyo",
     ".pyd",
 )
+
+IGNORED_EXTENSIONS = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".svg",
+    ".pdf",
+    ".ico",
+    ".jar",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".otf",
+    ".eot",
+    ".mp4",
+    ".mov",
+}
 
 
 def working_paths() -> list[Path]:
@@ -111,8 +143,8 @@ def main() -> int:
             if part.startswith(".") or part in IGNORED_DIRS or part.endswith(IGNORED_SUFFIXES):
                 skip = True
                 break
-            if not SNAKE_TOKEN_RE.fullmatch(part):
-                violations.append(f"directory not snake_case: {rel}")
+            if not LOWER_TOKEN_RE.fullmatch(part):
+                violations.append(f"directory not lowercase snake_case or kebab-case: {rel}")
                 skip = True
                 break
         if skip:
@@ -121,8 +153,10 @@ def main() -> int:
         name = parts[-1]
         if name.startswith(".") or name in IGNORED_FILES or name.endswith(IGNORED_SUFFIXES):
             continue
-        if not SNAKE_FILE_RE.fullmatch(name):
-            violations.append(f"file not snake_case: {rel}")
+        if Path(name).suffix.lower() in IGNORED_EXTENSIONS:
+            continue
+        if not LOWER_FILE_RE.fullmatch(name):
+            violations.append(f"file not lowercase snake_case or kebab-case: {rel}")
 
     local_modules = discover_local_modules(paths)
     py_files = [p for p in paths if p.suffix == ".py"]
